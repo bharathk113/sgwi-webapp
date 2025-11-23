@@ -17,7 +17,7 @@ export const ResultsAnalysis: React.FC = () => {
             <p className="text-slate-300 leading-relaxed text-lg mb-6">
               The reliability of the Multi-Model SGWI was rigorously validated against established long-term indices. 
               Despite using a shorter dataset (16 years), the SGWI demonstrated a remarkable alignment with indices 
-              derived from >30 years of data.
+              derived from &gt;30 years of data.
             </p>
             <div className="flex gap-4">
               <div className="bg-slate-900 border border-slate-800 p-4 rounded-lg">
