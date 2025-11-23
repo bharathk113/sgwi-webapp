@@ -4,20 +4,23 @@ import { METHODOLOGY_STEPS } from '../constants';
 // Enhanced Math Renderer Component
 const MathDisplay: React.FC<{ template: string }> = ({ template }) => {
   // Regex to identify \frac{numerator}{denominator}
+  // Also handles \quad
   const parts = template.split(/(\\frac\{[^}]+\}\{[^}]+\}|\\quad)/g);
 
   return (
     <div className="font-mono text-lg flex flex-wrap items-center gap-2 justify-center text-neon-300">
       {parts.map((part, i) => {
         if (part.startsWith('\\frac')) {
+          // Extract numerator and denominator accounting for nested braces if simple
+          // For complex nesting, a full parser is needed, but this works for the provided formulas
           const match = part.match(/\\frac\{(.+?)\}\{(.+?)\}/);
           if (match) {
             return (
               <div key={i} className="inline-flex flex-col items-center mx-1 align-middle">
-                <span className="border-b border-neon-400 px-1 pb-0.5 mb-0.5 text-center block w-full">
+                <span className="border-b border-neon-400 px-1 pb-0.5 mb-0.5 text-center block w-full text-sm">
                   {parseContent(match[1])}
                 </span>
-                <span className="text-center block w-full px-1">
+                <span className="text-center block w-full px-1 text-sm">
                   {parseContent(match[2])}
                 </span>
               </div>
@@ -54,7 +57,7 @@ const parseContent = (text: string) => {
         return (
             <span key={i} className="inline-flex flex-col items-center align-middle mx-1 leading-none">
                 <span className={`${isMax ? 'text-base font-sans' : 'text-xl'}`}>{symbol}</span>
-                <span className="text-[0.6em] mt-0.5">{subscript}</span>
+                <span className="text-[0.6em] mt-1 text-neon-500">{subscript}</span>
             </span>
         );
     }
@@ -66,30 +69,42 @@ const parseContent = (text: string) => {
 
 const parseStandardTokens = (text: string, keyPrefix: number) => {
     // Split by superscripts ^{...} and subscripts _{...} or simple _x
-    // Also handle \left| and \right| and \, and \min
+    // Also handle \left| and \right| and \, and \min and standard text
     const tokens = text.split(/(\^\{[^}]+\}|_\{[^}]+\}|_\w|\\left\||\\right\||\\,|\\min)/g);
 
     return tokens.map((token, i) => {
         const key = `${keyPrefix}-${i}`;
 
         if (token.startsWith('_{')) {
-            return <sub key={key} className="text-[0.7em] align-baseline relative top-[0.3em]">{token.slice(2, -1)}</sub>;
+            return <sub key={key} className="text-[0.6em] align-baseline relative top-[0.3em] ml-0.5">{token.slice(2, -1)}</sub>;
         }
         if (token.startsWith('_')) {
-            return <sub key={key} className="text-[0.7em] align-baseline relative top-[0.3em]">{token.slice(1)}</sub>;
+            return <sub key={key} className="text-[0.6em] align-baseline relative top-[0.3em] ml-0.5">{token.slice(1)}</sub>;
         }
         if (token.startsWith('^{')) {
             // Handle spacing in superscript if needed
-            return <sup key={key} className="text-[0.7em] align-baseline relative -top-[0.4em]">{token.slice(2, -1).replace(/\\,/g, ' ')}</sup>;
+            return <sup key={key} className="text-[0.6em] align-baseline relative -top-[0.4em] ml-0.5">{token.slice(2, -1).replace(/\\,/g, ' ')}</sup>;
         }
         if (token === '\\left|' || token === '\\right|') {
-            return <span key={key} className="mx-0.5 text-slate-400">|</span>;
+            return <span key={key} className="mx-1 text-neon-500 font-light text-xl align-middle">|</span>;
         }
         if (token === '\\,') {
             return <span key={key} className="w-1 inline-block"></span>;
         }
         if (token === '\\min') {
-            return <span key={key} className="font-sans">min</span>;
+            return <span key={key} className="font-sans text-xs uppercase ml-0.5">min</span>;
+        }
+        
+        // Render regular text (variables like d, F_o, etc)
+        // Ensure equals sign has padding
+        if (token.trim() === '=') {
+           return <span key={key} className="mx-2 text-white">=</span>;
+        }
+        if (token.trim() === '+') {
+           return <span key={key} className="mx-2 text-white">+</span>;
+        }
+        if (token.trim() === '-') {
+           return <span key={key} className="mx-2 text-white">-</span>;
         }
 
         return <span key={key}>{token}</span>;

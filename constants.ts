@@ -49,7 +49,6 @@ export const METHODOLOGY_STEPS = [
     desc: 'Computing relative likelihoods.',
     details: 'Models are not simply accepted or rejected; they are weighted. The Relative Likelihood (RL) of each distribution is calculated based on its AICc score compared to the minimum AICc found.',
     math: {
-      // Combining the two formulas for this step
       template: 'W_i = \\frac{RL_i}{\\sum_i RL_i} \\quad RL_i = e^{\\, (AIC_{\\min} - AIC_i)/2 }'
     }
   },
