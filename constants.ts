@@ -30,9 +30,8 @@ export const METHODOLOGY_STEPS = [
     title: 'Goodness of Fit (K-S Test)',
     desc: 'Testing distribution validity.',
     details: 'Before model selection, the Kolmogorov-Smirnov (K-S) test is employed to quantify the distance between the empirical distribution of the sample and the cumulative distribution function of reference distributions.',
-    // Custom structure for the renderer
     math: {
-      template: 'd = max | F_o(x) - S_n(x) |'
+      template: 'd = \\max_{x} \\, \\left| F_o(x) - S_n(x) \\right|'
     }
   },
   {
@@ -41,7 +40,7 @@ export const METHODOLOGY_STEPS = [
     desc: 'Handling small sample sizes.',
     details: 'Standard AIC overfits when sample sizes are small relative to parameters. We utilized AICc (Corrected Akaike Information Criterion) to penalize complexity, ensuring model selection is not biased towards overfitting in short-term datasets.',
     math: {
-      template: 'AICc = AIC + \\frac{2K^2 + 2K}{n - K - 1}'
+      template: 'AICc = AIC + \\frac{2K^{2} + 2K}{n - K - 1}'
     }
   },
   {
@@ -50,7 +49,8 @@ export const METHODOLOGY_STEPS = [
     desc: 'Computing relative likelihoods.',
     details: 'Models are not simply accepted or rejected; they are weighted. The Relative Likelihood (RL) of each distribution is calculated based on its AICc score compared to the minimum AICc found.',
     math: {
-      template: 'W_i = \\frac{RL_i}{\\sum RL_i}, \\quad RL_i = e^{(AIC_{min} - AIC_i)/2}'
+      // Combining the two formulas for this step
+      template: 'W_i = \\frac{RL_i}{\\sum_i RL_i} \\quad RL_i = e^{\\, (AIC_{\\min} - AIC_i)/2 }'
     }
   },
   {

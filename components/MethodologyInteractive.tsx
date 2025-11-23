@@ -1,63 +1,100 @@
 import React, { useState } from 'react';
 import { METHODOLOGY_STEPS } from '../constants';
 
-// Simple Math Renderer Component
+// Enhanced Math Renderer Component
 const MathDisplay: React.FC<{ template: string }> = ({ template }) => {
   // Regex to identify \frac{numerator}{denominator}
-  const parts = template.split(/(\\frac\{[^}]+\}\{[^}]+\}|,)/g);
+  const parts = template.split(/(\\frac\{[^}]+\}\{[^}]+\}|\\quad)/g);
 
   return (
     <div className="font-mono text-lg flex flex-wrap items-center gap-2 justify-center text-neon-300">
       {parts.map((part, i) => {
         if (part.startsWith('\\frac')) {
-          const match = part.match(/\\frac\{([^}]+)\}\{([^}]+)\}/);
+          const match = part.match(/\\frac\{(.+?)\}\{(.+?)\}/);
           if (match) {
             return (
               <div key={i} className="inline-flex flex-col items-center mx-1 align-middle">
                 <span className="border-b border-neon-400 px-1 pb-0.5 mb-0.5 text-center block w-full">
-                  {parseSubSup(match[1])}
+                  {parseContent(match[1])}
                 </span>
                 <span className="text-center block w-full px-1">
-                  {parseSubSup(match[2])}
+                  {parseContent(match[2])}
                 </span>
               </div>
             );
           }
         }
-        return <span key={i} className="mx-1">{parseSubSup(part)}</span>;
+        if (part === '\\quad') {
+            return <div key={i} className="w-8"></div>
+        }
+        return <span key={i} className="mx-0.5">{parseContent(part)}</span>;
       })}
     </div>
   );
 };
 
-// Helper to handle simple subscripts _ and superscripts ^
-const parseSubSup = (text: string) => {
+// Helper to handle tokens like \max_{x}, \sum_i, sub/superscripts
+const parseContent = (text: string) => {
   if (!text) return null;
-  // This is a basic parser for _ and ^
-  // Split by _ or ^ but keep delimiters
-  const tokens = text.split(/([_^]\{[^}]+\}|[_^]\w)/g);
+
+  // 1. Handle operators with limits: \max_{x}, \sum_{i} or \sum_i
+  // We split by these complex tokens first
+  const limitRegex = /(\\(?:max|sum)(?:_\{[^}]+\}|_\w))/g;
   
-  return tokens.map((token, i) => {
-    if (token.startsWith('_{')) {
-      return <sub key={i} className="text-[0.7em] align-baseline relative top-[0.3em]">{token.slice(2, -1)}</sub>;
+  const segments = text.split(limitRegex);
+
+  return segments.map((seg, i) => {
+    // Check if segment is a limit operator
+    if (seg.startsWith('\\max') || seg.startsWith('\\sum')) {
+        const isMax = seg.startsWith('\\max');
+        const subscriptMatch = seg.match(/_\{?([^}]+)\}?/);
+        const subscript = subscriptMatch ? subscriptMatch[1] : '';
+        const symbol = isMax ? 'max' : '∑';
+        
+        return (
+            <span key={i} className="inline-flex flex-col items-center align-middle mx-1 leading-none">
+                <span className={`${isMax ? 'text-base font-sans' : 'text-xl'}`}>{symbol}</span>
+                <span className="text-[0.6em] mt-0.5">{subscript}</span>
+            </span>
+        );
     }
-    if (token.startsWith('_')) {
-      return <sub key={i} className="text-[0.7em] align-baseline relative top-[0.3em]">{token.slice(1)}</sub>;
-    }
-    if (token.startsWith('^{')) {
-      return <sup key={i} className="text-[0.7em] align-baseline relative -top-[0.4em]">{token.slice(2, -1)}</sup>;
-    }
-    if (token.startsWith('^')) {
-      return <sup key={i} className="text-[0.7em] align-baseline relative -top-[0.4em]">{token.slice(1)}</sup>;
-    }
-    // Remove slash commands like \quad, \sum if simple display
-    if (token.includes('\\sum')) return <span key={i} className="text-xl mx-1">∑</span>;
-    if (token.includes('\\quad')) return <span key={i} className="w-4 inline-block"></span>;
-    if (token.includes('max')) return <span key={i} className="font-sans">max</span>;
-    
-    return <span key={i}>{token}</span>;
+
+    // If not a limit operator, parse standard tokens
+    return parseStandardTokens(seg, i);
   });
 };
+
+const parseStandardTokens = (text: string, keyPrefix: number) => {
+    // Split by superscripts ^{...} and subscripts _{...} or simple _x
+    // Also handle \left| and \right| and \, and \min
+    const tokens = text.split(/(\^\{[^}]+\}|_\{[^}]+\}|_\w|\\left\||\\right\||\\,|\\min)/g);
+
+    return tokens.map((token, i) => {
+        const key = `${keyPrefix}-${i}`;
+
+        if (token.startsWith('_{')) {
+            return <sub key={key} className="text-[0.7em] align-baseline relative top-[0.3em]">{token.slice(2, -1)}</sub>;
+        }
+        if (token.startsWith('_')) {
+            return <sub key={key} className="text-[0.7em] align-baseline relative top-[0.3em]">{token.slice(1)}</sub>;
+        }
+        if (token.startsWith('^{')) {
+            // Handle spacing in superscript if needed
+            return <sup key={key} className="text-[0.7em] align-baseline relative -top-[0.4em]">{token.slice(2, -1).replace(/\\,/g, ' ')}</sup>;
+        }
+        if (token === '\\left|' || token === '\\right|') {
+            return <span key={key} className="mx-0.5 text-slate-400">|</span>;
+        }
+        if (token === '\\,') {
+            return <span key={key} className="w-1 inline-block"></span>;
+        }
+        if (token === '\\min') {
+            return <span key={key} className="font-sans">min</span>;
+        }
+
+        return <span key={key}>{token}</span>;
+    });
+}
 
 export const MethodologyInteractive: React.FC = () => {
   const [activeStep, setActiveStep] = useState<number | null>(null);
